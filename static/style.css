@@ -1,0 +1,11 @@
+:root { color-scheme: light dark; }
+body { font-family: ui-sans-serif, system-ui; max-width: 760px; margin: 0 auto; padding: 2rem 1rem; line-height: 1.6; }
+.container { display: flex; flex-direction: column; gap: 1.2rem; }
+.narrow { max-width: 420px; margin: 0 auto; }
+.subtitle { color: #6f767d; }
+.card { border: 1px solid #9ba4af44; border-radius: 12px; padding: 1rem; display: grid; gap: 0.6rem; }
+input, textarea, button { font: inherit; padding: 0.65rem; border-radius: 8px; border: 1px solid #95a0ad66; background: transparent; }
+button { cursor: pointer; }
+.post { border-top: 1px dashed #9aa2ac66; padding-top: 1rem; margin-top: 1rem; }
+time { font-size: 0.85rem; color: #6f767d; }
+p { white-space: pre-wrap; }
