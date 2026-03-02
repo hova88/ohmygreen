@@ -1,0 +1,16 @@
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { font-family: ui-sans-serif, system-ui, -apple-system; max-width: 780px; margin: 0 auto; padding: 2rem 1rem 4rem; line-height: 1.7; }
+.container { display: grid; gap: 1.1rem; }
+.narrow { max-width: 440px; }
+.header-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+h1, h2, h3 { margin: 0 0 0.35rem; letter-spacing: -0.01em; }
+.subtitle, .muted, time { color: #6f767d; }
+.card { border: 1px solid #9ba4af44; border-radius: 12px; padding: 1rem; display: grid; gap: 0.6rem; }
+.stack { display: grid; gap: 0.5rem; }
+input, textarea, button { font: inherit; padding: 0.65rem; border-radius: 8px; border: 1px solid #95a0ad66; background: transparent; }
+button { cursor: pointer; width: fit-content; }
+pre { margin: 0; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.post { border-top: 1px dashed #9aa2ac66; padding-top: 1rem; margin-top: 1rem; }
+p { white-space: pre-wrap; margin: 0.5rem 0 0; }
+code { background: #9aa2ac22; padding: 0.1rem 0.3rem; border-radius: 4px; }

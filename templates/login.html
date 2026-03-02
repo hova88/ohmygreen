@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ohmygreen</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container narrow">
+    <h1>ohmygreen</h1>
+    <p class="subtitle">minimal private blog · AI + bearblog + CLI</p>
+    <form method="post" action="/session" class="card">
+      <label for="username">Username</label>
+      <input id="username" name="username" placeholder="you" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" minlength="6" required />
+      <button type="submit">Sign in / Sign up</button>
+    </form>
+    <p class="muted">首次登录会自动创建账户。之后同用户名需相同密码。</p>
+  </main>
+</body>
+</html>

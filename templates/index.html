@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ user.username }} · ohmygreen</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header-row">
+      <div>
+        <h1>{{ user.username }} / private feed</h1>
+        <p class="subtitle">Write with terminal agent, publish with one click.</p>
+      </div>
+      <form method="post" action="/logout">
+        <button type="submit">Logout</button>
+      </form>
+    </header>
+
+    <section class="card">
+      <h2>New post</h2>
+      <form method="post" action="/posts" class="stack">
+        <label>Title</label>
+        <input name="title" required placeholder="Minimal title" />
+        <label>Content (markdown supported as plain text for now)</label>
+        <textarea name="content" rows="10" required placeholder="Paste from `ohmygreen` CLI agent loop"></textarea>
+        <button type="submit">Publish</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>CLI workflow</h2>
+      <pre>pip install -e .
+ohmygreen
+# then choose publish in the agent loop</pre>
+    </section>
+
+    <section>
+      {% if posts %}
+        {% for post in posts %}
+          <article class="post">
+            <h3>{{ post.title }}</h3>
+            <time>{{ post.created_at }}</time>
+            <p>{{ post.content }}</p>
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="muted">No posts yet. Start from terminal: <code>ohmygreen</code>.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>
