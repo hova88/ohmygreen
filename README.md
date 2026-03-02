@@ -1,40 +1,82 @@
 # ohmygreen
 
-一个极简的 AI Power 私人博客 Demo（风格接近 BearBlog），重点是 **CLI + AI 写作体验**。
+极简、私有、CLI-first 的 AI 博客系统：**AI + BearBlog 风格 + Terminal Agent Loop**。
 
-## 当前能力（MVP Demo）
-- 极简网页：登录（用户名即私有空间）+ 发帖 + 时间线
-- 数据隔离：每个用户名只看到自己的帖子
-- CLI Agent Loop：`生成草稿 -> 简单自我修订 -> 输出 markdown`
-- 可逐步优化为 Codex/Claude Code 风格的写作闭环
+## 设计目标
+1. **BearBlog 风格**：简洁页面、快速发布、阅读优先。
+2. **私有账户**：每个用户只能查看自己的内容。
+3. **CLI 优先**：像 codex / claude code 一样，通过终端进入代理循环写作。
+4. **多模型 AI**：支持 `openai` 与 `qwen` 两种 provider。
+
+---
+
+## 功能概览
+- Web：登录/注册（同入口）、发布文章、仅显示本人时间线。
+- API：
+  - `POST /api/auth/login` 获取 token
+  - `GET /api/posts` 获取本人文章
+  - `POST /api/posts` 直接发布文章（Bearer token）
+- CLI：`ohmygreen` 进入 agent loop：
+  - `plan -> draft -> refine -> save/publish`
+
+---
 
 ## 快速开始
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+pip install -e .
 uvicorn app.main:app --reload
 ```
 
-打开 `http://127.0.0.1:8000`。
+访问：`http://127.0.0.1:8000`
 
-## CLI + AI 写作
+---
+
+## CLI 使用（核心体验）
+
 ```bash
-python -m cli.blog_agent run "今天如何用AI提升写作效率"
+ohmygreen
 ```
-输出文件默认在 `drafts/latest.md`，复制到网页中发布。
 
-> 若设置 `OPENAI_API_KEY`，CLI 会调用 OpenAI Responses API；否则使用本地 fallback 模板草稿。
+进入交互后会引导：
+- Topic / Audience / Tone
+- 选择 AI provider（`openai` 或 `qwen`）
+- 自动执行 agent loop 并输出草稿
+- 可在终端中反复 regenerate / save / publish
 
-## 发布建议（本 repo 内）
-1. 先以 SQLite + 单实例部署（Render/Fly.io/Railway 均可）
-2. 增加真实鉴权（session/cookie + password）
-3. 增加“CLI 直发 API”（从终端直接发布）
-4. 增加 agent loop（多轮计划、编辑、回看）
-5. 增加全文检索、标签、版本历史
+### 环境变量
 
-## 下一轮优化方向
-- 将 `user` query 参数迁移到安全 session
-- 增加 Markdown 渲染与 XSS 过滤
-- 增加 `/api/posts` 供 CLI 直接调用
-- 增加提示词模板库（标题、摘要、SEO、周报）
+```bash
+# OpenAI
+export OPENAI_API_KEY=...
+export OPENAI_MODEL=gpt-4.1-mini
+
+# Qwen (DashScope compatible endpoint)
+export QWEN_API_KEY=...
+export QWEN_MODEL=qwen-plus
+
+# optional
+export OHMYGREEN_BASE_URL=http://127.0.0.1:8000
+```
+
+> 若未配置 AI key，CLI 会自动回退到本地高质量模板草稿。
+
+---
+
+## 架构
+- `app/main.py`: FastAPI 路由（Web + API）
+- `app/models.py`: `User/Post` ORM 模型
+- `app/security.py`: 密码哈希与 token 生成
+- `cli/blog_agent.py`: 终端 agent loop 与 API 发布
+- `templates/` + `static/`: 极简界面
+
+---
+
+## 下一步优化建议
+- 将 session secret 改为环境变量并增强安全配置。
+- 为 markdown 增加安全渲染与目录导航。
+- 为 agent loop 增加“提纲确认 -> 分段写作 -> 最终审校”。
+- 增加端到端测试（CLI publish + Web timeline 验证）。

@@ -3,8 +3,14 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 
-class UserCreate(BaseModel):
+class LoginPayload(BaseModel):
     username: str = Field(min_length=2, max_length=50)
+    password: str = Field(min_length=6, max_length=128)
+
+
+class AuthResponse(BaseModel):
+    username: str
+    token: str
 
 
 class PostCreate(BaseModel):
