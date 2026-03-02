@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ user.username }} · ohmygreen</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="topbar">
+      <div>
+        <h1>{{ user.username }}</h1>
+        <p class="muted">A private, minimalist feed inspired by BearBlog principles.</p>
+      </div>
+      <form method="post" action="/logout">
+        <button type="submit">Log out</button>
+      </form>
+    </header>
+
+    <section class="panel">
+      <h2>Write a post</h2>
+      <form method="post" action="/posts" class="stack">
+        <label for="title">Title</label>
+        <input id="title" name="title" required placeholder="One clear idea" />
+
+        <label for="content">Body (markdown text)</label>
+        <textarea id="content" name="content" rows="10" required placeholder="Draft in terminal with `ohmygreen`, then paste here."></textarea>
+
+        <button type="submit">Publish</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>CLI flow</h2>
+      <pre>pip install -e .
+ohmygreen
+# choose publish inside the agent loop</pre>
+    </section>
+
+    <section>
+      {% if posts %}
+        {% for post in posts %}
+          <article class="post">
+            <h3>{{ post.title }}</h3>
+            <time>{{ post.created_at }}</time>
+            <p>{{ post.content }}</p>
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="muted">No posts yet. Start your writing loop in terminal with <code>ohmygreen</code>.</p>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

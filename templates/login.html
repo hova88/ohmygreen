@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ohmygreen</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap narrow">
+    <header>
+      <h1>ohmygreen</h1>
+      <p class="muted">Private notes. Minimal reading. CLI-first writing.</p>
+    </header>
+
+    <form method="post" action="/session" class="panel">
+      <label for="username">Username</label>
+      <input id="username" name="username" placeholder="you" required />
+
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" minlength="6" required />
+
+      <button type="submit">Sign in / Register</button>
+    </form>
+
+    <p class="muted tiny">First login creates the account. Later logins require the same password.</p>
+  </main>
+</body>
+</html>
