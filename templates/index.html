@@ -7,33 +7,35 @@
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <main class="container">
-    <header class="header-row">
+  <main class="wrap">
+    <header class="topbar">
       <div>
-        <h1>{{ user.username }} / private feed</h1>
-        <p class="subtitle">Write with terminal agent, publish with one click.</p>
+        <h1>{{ user.username }}</h1>
+        <p class="muted">A private, minimalist feed inspired by BearBlog principles.</p>
       </div>
       <form method="post" action="/logout">
-        <button type="submit">Logout</button>
+        <button type="submit">Log out</button>
       </form>
     </header>
 
-    <section class="card">
-      <h2>New post</h2>
+    <section class="panel">
+      <h2>Write a post</h2>
       <form method="post" action="/posts" class="stack">
-        <label>Title</label>
-        <input name="title" required placeholder="Minimal title" />
-        <label>Content (markdown supported as plain text for now)</label>
-        <textarea name="content" rows="10" required placeholder="Paste from `ohmygreen` CLI agent loop"></textarea>
+        <label for="title">Title</label>
+        <input id="title" name="title" required placeholder="One clear idea" />
+
+        <label for="content">Body (markdown text)</label>
+        <textarea id="content" name="content" rows="10" required placeholder="Draft in terminal with `ohmygreen`, then paste here."></textarea>
+
         <button type="submit">Publish</button>
       </form>
     </section>
 
-    <section class="card">
-      <h2>CLI workflow</h2>
+    <section class="panel">
+      <h2>CLI flow</h2>
       <pre>pip install -e .
 ohmygreen
-# then choose publish in the agent loop</pre>
+# choose publish inside the agent loop</pre>
     </section>
 
     <section>
@@ -46,7 +48,7 @@ ohmygreen
           </article>
         {% endfor %}
       {% else %}
-        <p class="muted">No posts yet. Start from terminal: <code>ohmygreen</code>.</p>
+        <p class="muted">No posts yet. Start your writing loop in terminal with <code>ohmygreen</code>.</p>
       {% endif %}
     </section>
   </main>

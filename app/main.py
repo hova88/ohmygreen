@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
@@ -15,8 +16,13 @@ from .security import hash_password, new_api_token, verify_password
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="OhMyGreen - AI + Bearblog + CLI")
-app.add_middleware(SessionMiddleware, secret_key="ohmygreen-dev-secret-change-me", same_site="lax")
+app = FastAPI(title="OhMyGreen")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("OHMYGREEN_SESSION_SECRET", "dev-secret-change-in-production"),
+    same_site="lax",
+    https_only=False,
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -31,22 +37,28 @@ def get_db():
         db.close()
 
 
-def require_user(request: Request, db: Session) -> User:
+def current_user_from_session(request: Request, db: Session) -> User:
     user_id = request.session.get("user_id")
     if not user_id:
-        raise HTTPException(status_code=401, detail="not authenticated")
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
     user = db.get(User, user_id)
     if user is None:
         request.session.clear()
-        raise HTTPException(status_code=401, detail="session invalid")
+        raise HTTPException(status_code=401, detail="Session invalid")
     return user
 
 
-def bearer_token(request: Request) -> str:
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="missing bearer token")
-    return auth.removeprefix("Bearer ").strip()
+def current_user_from_bearer(request: Request, db: Session) -> User:
+    authorization = request.headers.get("Authorization", "")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token")
+
+    token = authorization.removeprefix("Bearer ").strip()
+    user = db.scalar(select(User).where(User.api_token == token))
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return user
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -58,7 +70,7 @@ def home(request: Request, db: Session = Depends(get_db)):
     user = db.get(User, user_id)
     if not user:
         request.session.clear()
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Session expired."})
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Your session expired."})
 
     posts = db.scalars(select(Post).where(Post.owner_id == user.id).order_by(Post.created_at.desc())).all()
     return templates.TemplateResponse("index.html", {"request": request, "user": user, "posts": posts})
@@ -71,18 +83,23 @@ def login_or_register(
     password: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    username = username.strip().lower()
-    if len(username) < 2 or len(password) < 6:
-        raise HTTPException(status_code=400, detail="username/password invalid")
+    normalized_username = username.strip().lower()
+    normalized_password = password.strip()
+    if len(normalized_username) < 2 or len(normalized_password) < 6:
+        raise HTTPException(status_code=400, detail="Username/password is invalid")
 
-    user = db.scalar(select(User).where(User.username == username))
+    user = db.scalar(select(User).where(User.username == normalized_username))
     if user is None:
-        user = User(username=username, password_hash=hash_password(password), api_token=new_api_token())
+        user = User(
+            username=normalized_username,
+            password_hash=hash_password(normalized_password),
+            api_token=new_api_token(),
+        )
         db.add(user)
         db.commit()
         db.refresh(user)
-    elif not verify_password(password, user.password_hash):
-        raise HTTPException(status_code=401, detail="invalid credentials")
+    elif not verify_password(normalized_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
 
     request.session["user_id"] = user.id
     return RedirectResponse(url="/", status_code=303)
@@ -101,7 +118,8 @@ def create_post(
     content: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    user = require_user(request, db)
+    user = current_user_from_session(request, db)
+
     post = Post(owner_id=user.id, title=title.strip(), content=content.strip())
     db.add(post)
     db.commit()
@@ -110,29 +128,26 @@ def create_post(
 
 @app.post("/api/auth/login", response_model=AuthResponse)
 def api_login(payload: LoginPayload, db: Session = Depends(get_db)):
-    username = payload.username.strip().lower()
-    user = db.scalar(select(User).where(User.username == username))
-    if user is None or not verify_password(payload.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="invalid credentials")
+    normalized_username = payload.username.strip().lower()
+    normalized_password = payload.password.strip()
+
+    user = db.scalar(select(User).where(User.username == normalized_username))
+    if user is None or not verify_password(normalized_password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
     return AuthResponse(username=user.username, token=user.api_token)
 
 
 @app.get("/api/posts", response_model=list[PostOut])
 def api_list_posts(request: Request, db: Session = Depends(get_db)):
-    token = bearer_token(request)
-    user = db.scalar(select(User).where(User.api_token == token))
-    if user is None:
-        raise HTTPException(status_code=401, detail="invalid token")
+    user = current_user_from_bearer(request, db)
     posts = db.scalars(select(Post).where(Post.owner_id == user.id).order_by(Post.created_at.desc())).all()
     return posts
 
 
 @app.post("/api/posts", response_model=PostOut)
 def api_create_post(payload: PostCreate, request: Request, db: Session = Depends(get_db)):
-    token = bearer_token(request)
-    user = db.scalar(select(User).where(User.api_token == token))
-    if user is None:
-        raise HTTPException(status_code=401, detail="invalid token")
+    user = current_user_from_bearer(request, db)
 
     post = Post(owner_id=user.id, title=payload.title.strip(), content=payload.content.strip())
     db.add(post)
