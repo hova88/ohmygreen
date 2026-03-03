@@ -48,22 +48,29 @@ Then it renders a draft preview and lets you choose:
 
 ## Environment variables
 
+Copy `.env.example` to `.env` and update values as needed.
+
 ```bash
-# Web session
-export OHMYGREEN_SESSION_SECRET="change-me"
-
-# OpenAI
-export OPENAI_API_KEY="..."
-export OPENAI_MODEL="gpt-4.1-mini"
-
-# Qwen (DashScope-compatible)
-export QWEN_API_KEY="..."
-export QWEN_MODEL="qwen-plus"
-
-# optional
-export OHMYGREEN_BASE_URL="http://127.0.0.1:8000"
-export OHMYGREEN_AI_PROVIDER="openai"
+cp .env.example .env
 ```
+
+### web
+- `OHMYGREEN_ENV` (set to `production` in production)
+- `OHMYGREEN_SESSION_SECRET` (**must not** be empty/default in production)
+- `DATABASE_URL`
+
+### api
+- API uses the same `DATABASE_URL` and `OHMYGREEN_SESSION_SECRET` as web.
+
+### cli
+- `OHMYGREEN_BASE_URL`
+- `OHMYGREEN_AI_PROVIDER` (`openai` or `qwen`)
+
+### ai
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `QWEN_API_KEY`
+- `QWEN_MODEL`
 
 ## API endpoints
 

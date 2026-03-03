@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
 import requests
 import typer
+from app.core.settings import Settings, get_settings
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
@@ -23,19 +23,11 @@ class AIConfig:
     api_key: str
 
 
-def load_ai_config(provider: str | None = None) -> AIConfig:
-    selected = (provider or os.getenv("OHMYGREEN_AI_PROVIDER") or "openai").lower().strip()
+def load_ai_config(settings: Settings, provider: str | None = None) -> AIConfig:
+    selected = (provider or settings.ai_provider).lower().strip()
     if selected == "qwen":
-        return AIConfig(
-            provider="qwen",
-            model=os.getenv("QWEN_MODEL", "qwen-plus"),
-            api_key=os.getenv("QWEN_API_KEY", ""),
-        )
-    return AIConfig(
-        provider="openai",
-        model=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
-        api_key=os.getenv("OPENAI_API_KEY", ""),
-    )
+        return AIConfig(provider="qwen", model=settings.qwen_model, api_key=settings.qwen_api_key)
+    return AIConfig(provider="openai", model=settings.openai_model, api_key=settings.openai_api_key)
 
 
 def provider_url(provider: str) -> str:
@@ -77,8 +69,8 @@ def chat_completion(prompt: str, cfg: AIConfig) -> str:
     return response.json()["choices"][0]["message"]["content"]
 
 
-def generate_post(topic: str, audience: str, tone: str, provider: str) -> str:
-    cfg = load_ai_config(provider)
+def generate_post(topic: str, audience: str, tone: str, provider: str, settings: Settings) -> str:
+    cfg = load_ai_config(settings=settings, provider=provider)
 
     plan_prompt = (
         f"Topic: {topic}\nAudience: {audience}\nTone: {tone}\n"
@@ -162,15 +154,17 @@ def shell(ctx: typer.Context) -> None:
     if ctx.invoked_subcommand:
         return
 
+    settings = get_settings()
+
     render_header()
     topic = Prompt.ask("Topic")
     audience = Prompt.ask("Audience", default="indie builders")
     tone = Prompt.ask("Tone", default="clear and practical")
-    provider = Prompt.ask("AI provider", choices=["openai", "qwen"], default="openai")
+    provider = Prompt.ask("AI provider", choices=["openai", "qwen"], default=settings.ai_provider)
 
     render_context(topic, audience, tone, provider)
     console.print("[yellow]Generating draft...[/yellow]")
-    markdown = generate_post(topic=topic, audience=audience, tone=tone, provider=provider)
+    markdown = generate_post(topic=topic, audience=audience, tone=tone, provider=provider, settings=settings)
     console.print(Panel(Markdown(markdown), title="Draft Preview", border_style="magenta"))
 
     while True:
@@ -183,6 +177,7 @@ def shell(ctx: typer.Context) -> None:
                 audience=audience,
                 tone=tone,
                 provider=provider,
+                settings=settings,
             )
             console.print(Panel(Markdown(markdown), title="Regenerated Draft", border_style="magenta"))
             continue
@@ -194,7 +189,7 @@ def shell(ctx: typer.Context) -> None:
             continue
 
         if action == "publish":
-            base_url = Prompt.ask("Server URL", default=os.getenv("OHMYGREEN_BASE_URL", "http://127.0.0.1:8000"))
+            base_url = Prompt.ask("Server URL", default=settings.base_url)
             username = Prompt.ask("Username")
             password = Prompt.ask("Password", password=True)
             token = api_login(base_url, username, password)
@@ -209,14 +204,16 @@ def shell(ctx: typer.Context) -> None:
 @app.command("publish-file")
 def publish_file(
     path: Path = typer.Argument(..., exists=True, readable=True),
-    base_url: str = typer.Option("http://127.0.0.1:8000"),
+    base_url: str | None = typer.Option(None),
     username: str = typer.Option(...),
     password: str = typer.Option(..., prompt=True, hide_input=True),
 ) -> None:
     """Publish an existing markdown file via API."""
+    settings = get_settings()
+    target_base_url = base_url or settings.base_url
     content = path.read_text(encoding="utf-8")
-    token = api_login(base_url, username, password)
-    post_id = api_publish(base_url, token, parse_title(content), content)
+    token = api_login(target_base_url, username, password)
+    post_id = api_publish(target_base_url, token, parse_title(content), content)
     console.print(f"[green]Published[/green] {path} -> post #{post_id}")
 
 

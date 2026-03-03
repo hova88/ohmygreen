@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
@@ -9,17 +8,20 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
+from .core.settings import get_settings
 from .database import Base, SessionLocal, engine
 from .models import Post, User
 from .schemas import AuthResponse, LoginPayload, PostCreate, PostOut
 from .security import hash_password, new_api_token, verify_password
+
+settings = get_settings()
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="OhMyGreen")
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("OHMYGREEN_SESSION_SECRET", "dev-secret-change-in-production"),
+    secret_key=settings.session_secret,
     same_site="lax",
     https_only=False,
 )
