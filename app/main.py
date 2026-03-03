@@ -9,7 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 
-from .database import Base, SessionLocal, engine
+from .api.deps import bearer_auth, get_db, session_auth
+from .api.errors import register_error_handlers
+from .database import Base, engine
 from .models import Post, User
 from .schemas import AuthResponse, LoginPayload, PostCreate, PostOut
 from .security import hash_password, new_api_token, verify_password
@@ -28,37 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def current_user_from_session(request: Request, db: Session) -> User:
-    user_id = request.session.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-
-    user = db.get(User, user_id)
-    if user is None:
-        request.session.clear()
-        raise HTTPException(status_code=401, detail="Session invalid")
-    return user
-
-
-def current_user_from_bearer(request: Request, db: Session) -> User:
-    authorization = request.headers.get("Authorization", "")
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing bearer token")
-
-    token = authorization.removeprefix("Bearer ").strip()
-    user = db.scalar(select(User).where(User.api_token == token))
-    if user is None:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return user
+register_error_handlers(app)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -113,13 +85,11 @@ def logout(request: Request):
 
 @app.post("/posts")
 def create_post(
-    request: Request,
     title: str = Form(...),
     content: str = Form(...),
     db: Session = Depends(get_db),
+    user: User = Depends(session_auth),
 ):
-    user = current_user_from_session(request, db)
-
     post = Post(owner_id=user.id, title=title.strip(), content=content.strip())
     db.add(post)
     db.commit()
@@ -139,16 +109,13 @@ def api_login(payload: LoginPayload, db: Session = Depends(get_db)):
 
 
 @app.get("/api/posts", response_model=list[PostOut])
-def api_list_posts(request: Request, db: Session = Depends(get_db)):
-    user = current_user_from_bearer(request, db)
+def api_list_posts(db: Session = Depends(get_db), user: User = Depends(bearer_auth)):
     posts = db.scalars(select(Post).where(Post.owner_id == user.id).order_by(Post.created_at.desc())).all()
     return posts
 
 
 @app.post("/api/posts", response_model=PostOut)
-def api_create_post(payload: PostCreate, request: Request, db: Session = Depends(get_db)):
-    user = current_user_from_bearer(request, db)
-
+def api_create_post(payload: PostCreate, db: Session = Depends(get_db), user: User = Depends(bearer_auth)):
     post = Post(owner_id=user.id, title=payload.title.strip(), content=payload.content.strip())
     db.add(post)
     db.commit()
