@@ -1,4 +1,4 @@
-from __future__ import annotations
+from cli.commands.main import app
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -219,3 +219,4 @@ def publish_file(
 
 if __name__ == "__main__":
     app()
+__all__ = ["app"]

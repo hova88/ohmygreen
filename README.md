@@ -13,38 +13,47 @@ A private, minimalist, CLI-first AI blogging system inspired by BearBlog's desig
 - Private account space with session-based web authentication.
 - Per-user post isolation (you only see your own posts).
 - Token-based API for CLI publishing.
-- Interactive terminal loop: `plan -> draft -> refine -> save/publish`.
-- Minimal fallback draft generation when no AI key is configured.
+- Alembic-managed schema migrations (no runtime `create_all`).
+- Structured request/error logging with `request_id` and `error_code`.
 
 ## Quick start
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 pip install -e .
+alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
 Open `http://127.0.0.1:8000`.
 
-## CLI usage
+## Makefile commands
 
 ```bash
-ohmygreen
+make dev      # setup venv + install runtime/dev deps
+make format   # ruff format
+make lint     # ruff + mypy
+make migrate  # alembic upgrade head
+make serve    # migrate + uvicorn
+make cli      # run ohmygreen terminal agent
 ```
 
-The CLI will ask for:
-- topic
-- audience
-- tone
-- provider (`openai` or `qwen`)
+## Dependency groups
 
-Then it renders a draft preview and lets you choose:
-- `regen`
-- `save`
-- `publish`
-- `quit`
+- Runtime dependencies: `requirements.txt` / `[project.dependencies]`
+- Development dependencies: `requirements-dev.txt` / `[project.optional-dependencies.dev]`
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+Includes:
+- multi-stage `Dockerfile`
+- `docker-compose.yml` with `web` service + persisted SQLite volume
 
 ## Environment variables
 
@@ -78,14 +87,14 @@ cp .env.example .env
 - `GET /api/posts` -> list your own posts (Bearer token)
 - `POST /api/posts` -> create a post (Bearer token)
 
-## Architecture
+Error payload format:
 
-- `app/main.py` - FastAPI web + API routes
-- `app/models.py` - SQLAlchemy models
-- `app/security.py` - password hashing + token generation
-- `cli/blog_agent.py` - Typer + Rich interactive terminal agent
-- `templates/`, `static/` - minimalist UI
-
-## Design note
-
-This project **references BearBlog principles** (simplicity, readability, minimal UI), not a line-by-line implementation of the BearBlog codebase.
+```json
+{
+  "error": {
+    "request_id": "...",
+    "error_code": "AUTH_ERROR",
+    "message": "Invalid credentials"
+  }
+}
+```
