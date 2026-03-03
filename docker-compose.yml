@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      OHMYGREEN_SESSION_SECRET: dev-secret-change-in-production
+      OHMYGREEN_DATABASE_URL: sqlite:////data/ohmygreen.db
+    volumes:
+      - ohmygreen-data:/data
+
+volumes:
+  ohmygreen-data:
