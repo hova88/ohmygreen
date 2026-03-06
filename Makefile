@@ -1,29 +1,19 @@
-.PHONY: dev backend frontend lint format test cli doctor docker-up
+.PHONY: install dev build test lint format
+
+install:
+	python -m pip install -e '.[dev]'
 
 dev:
-	python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt
+	blog dev --watch
 
-backend:
-	uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
-
-frontend:
-	cd frontend && npm install && npm run dev -- --host 0.0.0.0 --port 5173
-
-lint:
-	ruff check backend cli
-	mypy backend cli
-
-format:
-	ruff format backend cli
+build:
+	blog build
 
 test:
-	pytest -q
+	pytest
 
-cli:
-	python -m cli.ohmygreen_cli.main
+lint:
+	ruff check .
 
-doctor:
-	python -m cli.ohmygreen_cli.main doctor
-
-docker-up:
-	docker compose -f configs/docker-compose.yml up --build
+format:
+	ruff format .

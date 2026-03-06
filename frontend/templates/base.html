@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ page_title }} · {{ site.site_name }}</title>
+  <meta name="description" content="{{ site.description }}" />
+  <meta property="og:title" content="{{ page_title }} · {{ site.site_name }}" />
+  <meta property="og:description" content="{{ site.description }}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="{{ site.site_url }}" />
+  <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <a href="/">{{ site.site_name }}</a>
+      <nav>
+        <a href="/blog/">Blog</a>
+      </nav>
+    </header>
+    {% block content %}{% endblock %}
+    <footer>
+      <small>{{ site.author }} · {{ now.year }}</small>
+    </footer>
+  </main>
+</body>
+</html>

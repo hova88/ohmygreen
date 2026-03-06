@@ -1,30 +1,40 @@
-from __future__ import annotations
-
-import unittest
-from unittest.mock import patch
-
-from cli.core.generation import fallback_draft, generate_post, parse_title
+from blog.builder import BlogBuilder
 
 
-class GenerationTests(unittest.TestCase):
-    def test_parse_title_extracts_first_h1(self) -> None:
-        markdown = "intro\n# Hello World\n## Section"
-        self.assertEqual(parse_title(markdown), "Hello World")
+def test_build_creates_pages(tmp_path):
+    posts = tmp_path / "posts"
+    templates = tmp_path / "templates"
+    static = tmp_path / "static"
+    dist = tmp_path / "dist"
 
-    def test_parse_title_returns_untitled_without_h1(self) -> None:
-        self.assertEqual(parse_title("## No heading"), "Untitled")
+    posts.mkdir()
+    templates.mkdir(parents=True)
+    static.mkdir()
 
-    @patch("cli.core.generation.load_ai_config")
-    def test_generate_post_uses_fallback_without_api_key(self, mock_load_ai_config) -> None:
-        class DummyCfg:
-            provider = "openai"
-            model = "x"
-            api_key = ""
+    (posts / "hello.md").write_text(
+        "---\ntitle: Hello\ndate: 2026-01-01\nslug: hello\ntags: [x]\n---\n\nHi",
+        encoding="utf-8",
+    )
+    (templates / "index.html").write_text("{{ posts|length }}", encoding="utf-8")
+    (templates / "blog-index.html").write_text("blog", encoding="utf-8")
+    (templates / "post.html").write_text("{{ post.title }}", encoding="utf-8")
+    (templates / "404.html").write_text("404", encoding="utf-8")
+    (templates / "rss.xml").write_text("rss", encoding="utf-8")
+    (templates / "sitemap.xml").write_text("site", encoding="utf-8")
+    (static / "style.css").write_text("body{}", encoding="utf-8")
 
-        mock_load_ai_config.return_value = DummyCfg()
+    from blog.config import BlogConfig
 
-        self.assertEqual(generate_post("topic", "audience", "tone", "openai"), fallback_draft())
+    builder = BlogBuilder(
+        BlogConfig(
+            posts_dir=posts,
+            templates_dir=templates,
+            static_dir=static,
+            dist_dir=dist,
+        )
+    )
+    builder.build()
 
-
-if __name__ == "__main__":
-    unittest.main()
+    assert (dist / "index.html").exists()
+    assert (dist / "blog" / "hello" / "index.html").exists()
+    assert (dist / "rss.xml").exists()
