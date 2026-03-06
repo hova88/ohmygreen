@@ -1,76 +1,75 @@
 # ohmygreen
 
-Minimal full-stack writing platform inspired by BearBlog's engineering philosophy:
-small surface area, clear boundaries, and pragmatic defaults.
+Minimal, static, markdown-first technical blog platform inspired by Bear-style writing.
 
-## Stack
-- **Frontend**: Vite + TypeScript (vanilla, no SPA framework)
-- **Backend**: FastAPI + SQLAlchemy
-- **CLI**: Typer + Rich
-- **Build**: Make + npm + pip
-- **Deploy**: Docker Compose
+## Why this architecture?
 
-## Repository layout
+This project uses **static site generation** to maximize simplicity, speed, and reliability:
+
+- no runtime backend required
+- markdown posts committed in Git
+- tiny frontend footprint (mostly HTML + CSS)
+- cheap deployment on any static host
+
+## Repository structure
 
 ```text
-backend/
-  app/
-    api/
-    core/
-    db/
-    domain/
-    services/
+blog/                 # Static build engine and markdown parser
+cli/                  # `blog` CLI commands
 frontend/
-  src/
-cli/
-  ohmygreen_cli/
-scripts/
-configs/
-docs/
-```
-
-## Quick start
-
-```bash
-make dev
-source .venv/bin/activate
-make backend
-```
-
-In a second terminal:
-
-```bash
-make frontend
+  templates/          # Jinja templates (homepage, blog index, post, 404, RSS, sitemap)
+  static/             # Minimal serif styles
+posts/                # Markdown content with frontmatter
+dist/                 # Generated site output
+scripts/              # Utility scripts
+docs/                 # Architecture notes
+configs/              # Deployment/container placeholders
+backend/              # Reserved (empty by default)
 ```
 
 ## CLI
 
 ```bash
-make cli         # opens dev CLI
-make doctor      # verifies local setup
+blog new "Post Title"
+blog dev
+blog build
+blog deploy --target netlify
 ```
 
-Disable animations:
+Disable CLI animation:
 
 ```bash
-OHMYGREEN_NO_ANIMATION=1 make cli
+blog build --no-anim
+# or
+BLOG_NO_ANIMATION=1 blog dev
 ```
 
-## API
+## Local setup
 
-- `GET /api/v1/health`
-- `GET /api/v1/posts`
-- `POST /api/v1/posts`
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+blog dev
+```
+
+Open http://localhost:4173.
+
+## Markdown post format
+
+```markdown
+---
+title: My Post
+date: 2026-03-05
+slug: my-post
+tags:
+  - architecture
+---
+
+Your markdown body.
+```
 
 ## Deployment
 
-```bash
-docker compose -f configs/docker-compose.yml up --build
-```
-
-## Security baseline
-
-- Pydantic request validation for API payloads.
-- Environment based secrets and runtime config.
-- CORS allow-list from `OHMYGREEN_CORS_ORIGINS`.
-- Generic JSON errors without secret leakage.
+1. Build static output: `blog build`
+2. Deploy `dist/` to Netlify, Vercel, Cloudflare Pages, S3+CloudFront, or any CDN/static host.

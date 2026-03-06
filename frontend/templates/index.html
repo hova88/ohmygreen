@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section>
+  <h1>Minimal engineering notes</h1>
+  <p>{{ site.description }}</p>
+</section>
+<section>
+  <h2>Recent posts</h2>
+  <ul>
+    {% for post in posts %}
+    <li><a href="/blog/{{ post.slug }}/">{{ post.title }}</a> <small>{{ post.date.strftime('%Y-%m-%d') }}</small></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

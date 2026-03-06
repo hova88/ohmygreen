@@ -1,0 +1,39 @@
+:root {
+  --text: #1f2933;
+  --muted: #64748b;
+  --bg: #fdfdfc;
+  --link: #1d4e89;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, serif;
+  line-height: 1.7;
+}
+main {
+  max-width: 700px;
+  margin: 2rem auto;
+  padding: 0 1rem 4rem;
+}
+header, footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2rem;
+  color: var(--muted);
+}
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+h1, h2, h3 { line-height: 1.25; }
+ul { padding-left: 1.2rem; }
+pre {
+  overflow-x: auto;
+  background: #f1f5f9;
+  padding: 0.8rem;
+  border-radius: 4px;
+}
+img { max-width: 100%; }
+small { color: var(--muted); }
