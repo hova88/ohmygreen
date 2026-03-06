@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ohmygreen"
 version = "0.1.0"
-description = "AI + BearBlog + CLI private blogging demo"
+description = "Minimal full-stack writing platform with frontend/backend/CLI separation"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -32,10 +32,10 @@ dev = [
 ]
 
 [project.scripts]
-ohmygreen = "cli.blog_agent:app"
+ohmygreen = "cli.ohmygreen_cli.main:app"
 
 [tool.setuptools.packages.find]
-include = ["app*", "cli*"]
+include = ["backend*", "cli*", "app*"]
 
 [tool.ruff]
 line-length = 100
