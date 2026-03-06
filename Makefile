@@ -1,21 +1,29 @@
-.PHONY: dev lint format serve cli migrate
+.PHONY: dev backend frontend lint format test cli doctor docker-up
 
 dev:
-	python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt && pip install -e .
+	python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt
+
+backend:
+	uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+
+frontend:
+	cd frontend && npm install && npm run dev -- --host 0.0.0.0 --port 5173
 
 lint:
-	ruff check app cli
-	mypy app cli
+	ruff check backend cli
+	mypy backend cli
 
 format:
-	ruff format app cli
+	ruff format backend cli
 
-serve:
-	alembic upgrade head
-	uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+test:
+	pytest -q
 
 cli:
-	ohmygreen
+	python -m cli.ohmygreen_cli.main
 
-migrate:
-	alembic upgrade head
+doctor:
+	python -m cli.ohmygreen_cli.main doctor
+
+docker-up:
+	docker compose -f configs/docker-compose.yml up --build

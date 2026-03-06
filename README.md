@@ -1,100 +1,76 @@
 # ohmygreen
 
-A private, minimalist, CLI-first AI blogging system inspired by BearBlog's design philosophy.
+Minimal full-stack writing platform inspired by BearBlog's engineering philosophy:
+small surface area, clear boundaries, and pragmatic defaults.
 
-## Core pillars
+## Stack
+- **Frontend**: Vite + TypeScript (vanilla, no SPA framework)
+- **Backend**: FastAPI + SQLAlchemy
+- **CLI**: Typer + Rich
+- **Build**: Make + npm + pip
+- **Deploy**: Docker Compose
 
-- **AI**: Generate and refine posts with OpenAI or Qwen.
-- **BearBlog-style minimalism**: Keep UI calm, focused, and reading-first.
-- **CLI-first workflow**: Enter a guided terminal agent loop with `ohmygreen`.
+## Repository layout
 
-## What this project does now
-
-- Private account space with session-based web authentication.
-- Per-user post isolation (you only see your own posts).
-- Token-based API for CLI publishing.
-- Alembic-managed schema migrations (no runtime `create_all`).
-- Structured request/error logging with `request_id` and `error_code`.
+```text
+backend/
+  app/
+    api/
+    core/
+    db/
+    domain/
+    services/
+frontend/
+  src/
+cli/
+  ohmygreen_cli/
+scripts/
+configs/
+docs/
+```
 
 ## Quick start
 
 ```bash
-python -m venv .venv
+make dev
 source .venv/bin/activate
-pip install -r requirements-dev.txt
-pip install -e .
-alembic upgrade head
-uvicorn app.main:app --reload
+make backend
 ```
 
-Open `http://127.0.0.1:8000`.
-
-## Makefile commands
+In a second terminal:
 
 ```bash
-make dev      # setup venv + install runtime/dev deps
-make format   # ruff format
-make lint     # ruff + mypy
-make migrate  # alembic upgrade head
-make serve    # migrate + uvicorn
-make cli      # run ohmygreen terminal agent
+make frontend
 ```
 
-## Dependency groups
-
-- Runtime dependencies: `requirements.txt` / `[project.dependencies]`
-- Development dependencies: `requirements-dev.txt` / `[project.optional-dependencies.dev]`
-
-## Docker
+## CLI
 
 ```bash
-docker compose up --build
+make cli         # opens dev CLI
+make doctor      # verifies local setup
 ```
 
-Includes:
-- multi-stage `Dockerfile`
-- `docker-compose.yml` with `web` service + persisted SQLite volume
-
-## Environment variables
-
-Copy `.env.example` to `.env` and update values as needed.
+Disable animations:
 
 ```bash
-cp .env.example .env
+OHMYGREEN_NO_ANIMATION=1 make cli
 ```
 
-### web
-- `OHMYGREEN_ENV` (set to `production` in production)
-- `OHMYGREEN_SESSION_SECRET` (**must not** be empty/default in production)
-- `DATABASE_URL`
+## API
 
-### api
-- API uses the same `DATABASE_URL` and `OHMYGREEN_SESSION_SECRET` as web.
+- `GET /api/v1/health`
+- `GET /api/v1/posts`
+- `POST /api/v1/posts`
 
-### cli
-- `OHMYGREEN_BASE_URL`
-- `OHMYGREEN_AI_PROVIDER` (`openai` or `qwen`)
+## Deployment
 
-### ai
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `QWEN_API_KEY`
-- `QWEN_MODEL`
-
-## API endpoints
-
-- `POST /api/auth/login` -> returns `{ username, token }`
-- `GET /api/posts` -> list your own posts (Bearer token)
-- `POST /api/posts` -> create a post (Bearer token)
-
-Error payload format:
-
-```json
-{
-  "error": {
-    "request_id": "...",
-    "error_code": "AUTH_ERROR",
-    "message": "Invalid credentials"
-  }
-}
+```bash
+docker compose -f configs/docker-compose.yml up --build
 ```
+
+## Security baseline
+
+- Pydantic request validation for API payloads.
+- Environment based secrets and runtime config.
+- CORS allow-list from `OHMYGREEN_CORS_ORIGINS`.
+- Generic JSON errors without secret leakage.
