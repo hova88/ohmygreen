@@ -1,80 +1,40 @@
 from __future__ import annotations
 
-import itertools
-import os
-import sys
-import time
 from pathlib import Path
 
 import typer
 from rich.console import Console
 
-app = typer.Typer(help="ohmygreen developer CLI")
+app = typer.Typer(help="Simple helper commands for local ohmygreen setup")
 console = Console()
-
-LOGO = r"""
-  ____  _                           
- / __ \(_)___ ___  ____ _____  ____
-/ / / / / __ `__ \/ __ `/ __ \/ __ \
-/ /_/ / / / / / / / /_/ / / / / /_/ /
-\____/_/_/ /_/ /_/\__,_/_/ /_/\____/
-"""
-
-
-def animations_enabled() -> bool:
-    return os.getenv("OHMYGREEN_NO_ANIMATION", "0") != "1"
-
-
-def typewriter(text: str, delay: float = 0.02) -> None:
-    if not animations_enabled():
-        console.print(text)
-        return
-    for char in text:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        time.sleep(delay)
-    sys.stdout.write("\n")
-
-
-def spinner(text: str, seconds: float = 1.0) -> None:
-    if not animations_enabled():
-        console.print(f"- {text}")
-        return
-    chars = itertools.cycle("⠋⠙⠸⠴⠦⠇")
-    end = time.time() + seconds
-    while time.time() < end:
-        sys.stdout.write(f"\r{next(chars)} {text}")
-        sys.stdout.flush()
-        time.sleep(0.08)
-    sys.stdout.write(f"\r✓ {text}\n")
 
 
 @app.command()
 def doctor() -> None:
-    """Verify local toolchain."""
-    console.print("[grey58]ohmygreen[/grey58] [cyan]doctor[/cyan]")
-    spinner("checking backend folder")
-    assert Path("backend").exists(), "backend/ not found"
-    spinner("checking frontend folder")
-    assert Path("frontend").exists(), "frontend/ not found"
-    spinner("checking env sample")
-    assert Path(".env.example").exists(), ".env.example not found"
-    console.print("[cyan]environment looks good[/cyan]")
+    """Verify the core folders needed to run the project."""
+    required_paths = {
+        "frontend/": Path("frontend").exists(),
+        "backend/ or app/": Path("backend").exists() or Path("app").exists(),
+        "README.md": Path("README.md").exists(),
+    }
+    for label, ok in required_paths.items():
+        console.print(f"{'[green]OK[/green]' if ok else '[red]Missing[/red]'} {label}")
 
 
 @app.command()
 def bootstrap() -> None:
-    """Print first-run commands."""
-    console.print("[grey58]ohmygreen[/grey58] [cyan]bootstrap[/cyan]")
-    typewriter("python -m venv .venv && source .venv/bin/activate")
-    typewriter("pip install -r requirements-dev.txt")
-    typewriter("make dev")
+    """Print the fastest way to start the project locally."""
+    console.print("[bold]Quick start[/bold]")
+    console.print("1. python -m venv .venv && source .venv/bin/activate")
+    console.print("2. pip install -e '.[dev]'")
+    console.print("3. cd frontend && npm install")
+    console.print("4. Start the API, then run the frontend dev server.")
 
 
 @app.command()
 def logo() -> None:
-    """Print ASCII logo."""
-    console.print("[grey58]" + LOGO + "[/grey58]")
+    """Print a minimal wordmark."""
+    console.print("[green]ohmygreen[/green]")
 
 
 if __name__ == "__main__":
