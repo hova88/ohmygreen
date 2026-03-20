@@ -7,50 +7,73 @@
   </head>
   <body>
     <div class="page">
-      <header class="site-header">
-        <h1 class="site-title">ohmygreen</h1>
-        <nav class="site-nav" aria-label="Main navigation">
-          <a href="#composer">Write</a>
-          <a href="#posts">Posts</a>
-        </nav>
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Simple writing, fast publishing</p>
+          <h1 class="site-title">ohmygreen</h1>
+          <p class="hero-text">
+            A calm writing workspace for drafting, publishing, and reviewing short posts without a noisy dashboard.
+          </p>
+          <div class="hero-actions" aria-label="Quick actions">
+            <a href="#composer">Write a post</a>
+            <a href="#posts">Browse recent posts</a>
+          </div>
+        </div>
+        <aside class="hero-card" aria-label="How it works">
+          <h2>Start in three steps</h2>
+          <ol>
+            <li>Add a clear title.</li>
+            <li>Write or paste your post.</li>
+            <li>Publish and review it below.</li>
+          </ol>
+        </aside>
       </header>
 
-      <hr class="divider" />
+      <main class="layout">
+        <section id="composer" class="composer card" aria-labelledby="write-title">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Write</p>
+              <h2 id="write-title">Create a post</h2>
+            </div>
+            <p class="section-copy">Keep it short, clear, and ready to publish.</p>
+          </div>
 
-      <main>
-        <section id="composer" class="composer" aria-labelledby="write-title">
-          <h2 id="write-title">New post</h2>
           <form id="post-form">
-            <label class="sr-only" for="title">Title</label>
-            <input id="title" name="title" placeholder="Post title" minlength="3" maxlength="180" required />
+            <label for="title">Title</label>
+            <input id="title" name="title" placeholder="A headline people can understand in one glance" minlength="3" maxlength="180" required />
 
-            <label class="sr-only" for="body">Body</label>
-            <textarea id="body" name="body" placeholder="Write your note..." required></textarea>
+            <label for="body">Content</label>
+            <textarea id="body" name="body" placeholder="Write your idea, note, update, or draft here..." required></textarea>
 
             <div class="composer-footer">
-              <p id="status" aria-live="polite"></p>
-              <button id="publish-btn" type="submit">Publish</button>
+              <p id="status" class="status" aria-live="polite">Ready when you are.</p>
+              <div class="composer-actions">
+                <button id="clear-btn" type="button" class="secondary-btn">Clear</button>
+                <button id="publish-btn" type="submit">Publish post</button>
+              </div>
             </div>
           </form>
         </section>
 
-        <section id="posts" class="posts" aria-labelledby="posts-title">
-          <h2 class="sr-only" id="posts-title">Posts</h2>
+        <section id="posts" class="posts card" aria-labelledby="posts-title">
+          <div class="section-heading posts-heading">
+            <div>
+              <p class="section-kicker">Review</p>
+              <h2 id="posts-title">Recent posts</h2>
+            </div>
+            <p id="post-count" class="section-copy"></p>
+          </div>
+
           <article id="featured-post" class="featured-post hidden" aria-live="polite">
-            <h2 id="featured-title"></h2>
+            <p class="featured-label">Latest published</p>
+            <h3 id="featured-title"></h3>
             <p id="featured-date" class="featured-date"></p>
-            <blockquote class="featured-note">
-              <span>⚑</span>
-              <p>This is the latest published post.</p>
-            </blockquote>
             <div id="featured-body" class="featured-body"></div>
           </article>
 
-          <section class="post-list-block" aria-labelledby="recent-title">
-            <h3 id="recent-title">Recent posts</h3>
-            <p id="post-count" class="post-count"></p>
-            <ul id="post-list"></ul>
-          </section>
+          <ul id="post-list" class="post-list"></ul>
+          <button id="retry-btn" type="button" class="secondary-btn hidden">Retry loading posts</button>
         </section>
       </main>
     </div>

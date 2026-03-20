@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ohmygreen"
 version = "0.1.0"
-description = "Minimal static technical blog platform inspired by Bear-style blogs"
+description = "Simple writing workspace with a web app, API, and CLI"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -14,6 +14,7 @@ dependencies = [
   "markdown==3.7",
   "jinja2==3.1.4",
   "pyyaml==6.0.2",
+  "requests>=2.32,<3",
 ]
 
 [project.optional-dependencies]
@@ -24,6 +25,8 @@ dev = [
 
 [project.scripts]
 blog = "cli.blog_cli:app"
+ohmygreen = "cli.commands.main:app"
+ohmygreen-helper = "cli.ohmygreen_cli.main:app"
 
 [tool.setuptools.packages.find]
 include = ["blog*", "cli*"]
