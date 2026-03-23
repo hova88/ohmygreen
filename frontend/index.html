@@ -1,83 +1,16 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ohmygreen</title>
+    <meta
+      name="description"
+      content="一个专为漫画左右翻页而生的极简网页：沉浸式双页展开、键盘/触控/点击翻页、进度与缩略图快速跳转。"
+    />
+    <title>漫画分页浏览器</title>
   </head>
   <body>
-    <div class="page">
-      <header class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">Simple writing, fast publishing</p>
-          <h1 class="site-title">ohmygreen</h1>
-          <p class="hero-text">
-            A calm writing workspace for drafting, publishing, and reviewing short posts without a noisy dashboard.
-          </p>
-          <div class="hero-actions" aria-label="Quick actions">
-            <a href="#composer">Write a post</a>
-            <a href="#posts">Browse recent posts</a>
-          </div>
-        </div>
-        <aside class="hero-card" aria-label="How it works">
-          <h2>Start in three steps</h2>
-          <ol>
-            <li>Add a clear title.</li>
-            <li>Write or paste your post.</li>
-            <li>Publish and review it below.</li>
-          </ol>
-        </aside>
-      </header>
-
-      <main class="layout">
-        <section id="composer" class="composer card" aria-labelledby="write-title">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">Write</p>
-              <h2 id="write-title">Create a post</h2>
-            </div>
-            <p class="section-copy">Keep it short, clear, and ready to publish.</p>
-          </div>
-
-          <form id="post-form">
-            <label for="title">Title</label>
-            <input id="title" name="title" placeholder="A headline people can understand in one glance" minlength="3" maxlength="180" required />
-
-            <label for="body">Content</label>
-            <textarea id="body" name="body" placeholder="Write your idea, note, update, or draft here..." required></textarea>
-
-            <div class="composer-footer">
-              <p id="status" class="status" aria-live="polite">Ready when you are.</p>
-              <div class="composer-actions">
-                <button id="clear-btn" type="button" class="secondary-btn">Clear</button>
-                <button id="publish-btn" type="submit">Publish post</button>
-              </div>
-            </div>
-          </form>
-        </section>
-
-        <section id="posts" class="posts card" aria-labelledby="posts-title">
-          <div class="section-heading posts-heading">
-            <div>
-              <p class="section-kicker">Review</p>
-              <h2 id="posts-title">Recent posts</h2>
-            </div>
-            <p id="post-count" class="section-copy"></p>
-          </div>
-
-          <article id="featured-post" class="featured-post hidden" aria-live="polite">
-            <p class="featured-label">Latest published</p>
-            <h3 id="featured-title"></h3>
-            <p id="featured-date" class="featured-date"></p>
-            <div id="featured-body" class="featured-body"></div>
-          </article>
-
-          <ul id="post-list" class="post-list"></ul>
-          <button id="retry-btn" type="button" class="secondary-btn hidden">Retry loading posts</button>
-        </section>
-      </main>
-    </div>
-
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
