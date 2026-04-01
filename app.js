@@ -13,12 +13,7 @@
     chapterMeta: document.getElementById("chapter-meta"),
     chapterSelect: document.getElementById("chapter-select"),
     prevBtn: document.getElementById("prev-btn"),
-    nextBtn: document.getElementById("next-btn"),
-    zoomInBtn: document.getElementById("zoom-in-btn"),
-    zoomOutBtn: document.getElementById("zoom-out-btn"),
-    fitBtn: document.getElementById("fit-btn"),
-    layoutBtn: document.getElementById("layout-btn"),
-    zoomLabel: document.getElementById("zoom-label")
+    nextBtn: document.getElementById("next-btn")
   };
 
   const state = {
@@ -27,9 +22,7 @@
     imageCache: new Map(),
     io: null,
     preloadCache: new Map(),
-    currentPageUrls: [],
-    zoom: 1,
-    manualLayout: null
+    currentPageUrls: []
   };
 
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
@@ -215,23 +208,6 @@
     return article;
   }
 
-  function applyViewMode() {
-    const autoDouble = state.zoom <= 0.85;
-    const useDouble = state.manualLayout === null ? autoDouble : state.manualLayout === "double";
-
-    els.pages.classList.toggle("layout-double", useDouble);
-    els.layoutBtn.textContent = useDouble ? "双页" : "单页";
-
-    const width = useDouble ? clamp(state.zoom * 1.5, 0.8, 1.8) : state.zoom;
-    document.documentElement.style.setProperty("--page-width", `min(100%, ${Math.round(1100 * width)}px)`);
-    els.zoomLabel.textContent = `${Math.round(state.zoom * 100)}%`;
-  }
-
-  function setZoom(nextZoom) {
-    state.zoom = clamp(nextZoom, 0.5, 2.3);
-    applyViewMode();
-  }
-
   async function openChapter(index) {
     if (index < 0 || index >= state.chapters.length) return;
     state.currentIndex = index;
@@ -262,19 +238,6 @@
     els.prevBtn.addEventListener("click", () => openChapter(state.currentIndex - 1));
     els.nextBtn.addEventListener("click", () => openChapter(state.currentIndex + 1));
 
-    els.zoomInBtn.addEventListener("click", () => setZoom(state.zoom + 0.1));
-    els.zoomOutBtn.addEventListener("click", () => setZoom(state.zoom - 0.1));
-    els.fitBtn.addEventListener("click", () => {
-      state.manualLayout = null;
-      setZoom(1);
-    });
-
-    els.layoutBtn.addEventListener("click", () => {
-      const isNowDouble = els.pages.classList.contains("layout-double");
-      state.manualLayout = isNowDouble ? "single" : "double";
-      applyViewMode();
-    });
-
     els.chapterSelect.addEventListener("change", (event) => {
       const idx = state.chapters.findIndex((c) => c.id === event.target.value);
       if (idx >= 0) openChapter(idx);
@@ -283,31 +246,13 @@
     window.addEventListener("keydown", (event) => {
       if (event.key === "ArrowLeft") openChapter(state.currentIndex - 1);
       if (event.key === "ArrowRight") openChapter(state.currentIndex + 1);
-      if (event.key === "+" || event.key === "=") setZoom(state.zoom + 0.1);
-      if (event.key === "-") setZoom(state.zoom - 0.1);
-      if (event.key.toLowerCase() === "d") {
-        state.manualLayout = els.pages.classList.contains("layout-double") ? "single" : "double";
-        applyViewMode();
-      }
     });
-
-    window.addEventListener(
-      "wheel",
-      (event) => {
-        if (!event.ctrlKey && !event.metaKey) return;
-        event.preventDefault();
-        const delta = event.deltaY > 0 ? -0.06 : 0.06;
-        setZoom(state.zoom + delta);
-      },
-      { passive: false }
-    );
   }
 
   async function init() {
     try {
       state.chapters = await loadManifest();
       renderChapterOptions();
-      applyViewMode();
 
       const requested = new URLSearchParams(window.location.search).get("chapter");
       const initialIndex = state.chapters.findIndex((c) => c.id === requested);
