@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Berserk Image Reader</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hud">
+      <div class="left">
+        <strong id="series-name">Berserk</strong>
+        <span id="chapter-meta">Loading chapters…</span>
+      </div>
+      <div class="right">
+        <button id="prev-btn" type="button" aria-label="Previous chapter">←</button>
+        <select id="chapter-select" aria-label="Select chapter"></select>
+        <button id="next-btn" type="button" aria-label="Next chapter">→</button>
+      </div>
+    </header>
+
+    <main id="pages" aria-live="polite"></main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
