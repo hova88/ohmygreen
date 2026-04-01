@@ -13,7 +13,10 @@
     chapterMeta: document.getElementById("chapter-meta"),
     chapterSelect: document.getElementById("chapter-select"),
     prevBtn: document.getElementById("prev-btn"),
-    nextBtn: document.getElementById("next-btn")
+    nextBtn: document.getElementById("next-btn"),
+    zoomOutBtn: document.getElementById("zoom-out-btn"),
+    zoomInBtn: document.getElementById("zoom-in-btn"),
+    zoomIndicator: document.getElementById("zoom-indicator")
   };
 
   const state = {
@@ -22,12 +25,18 @@
     imageCache: new Map(),
     io: null,
     preloadCache: new Map(),
-    currentPageUrls: []
+    currentPageUrls: [],
+    zoom: 1
   };
 
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const ZOOM = {
+    min: 0.45,
+    max: 2.4,
+    step: 0.1
+  };
 
   function byName(a, b) {
     return collator.compare(a, b);
@@ -180,6 +189,32 @@
     );
   }
 
+  function updateZoomLayout() {
+    const viewportWidth = window.innerWidth;
+    const basePageWidth = Math.min(1100, viewportWidth);
+    const zoomedPageWidth = basePageWidth * state.zoom;
+    const columns = Math.max(1, Math.floor(viewportWidth / zoomedPageWidth));
+    const canvasWidth = Math.round(zoomedPageWidth * columns);
+    const zoomPercent = Math.round(state.zoom * 100);
+
+    document.documentElement.style.setProperty("--canvas-width", `${canvasWidth}px`);
+    document.documentElement.style.setProperty("--columns", String(columns));
+    els.zoomIndicator.textContent = `${zoomPercent}%`;
+    els.zoomOutBtn.disabled = state.zoom <= ZOOM.min;
+    els.zoomInBtn.disabled = state.zoom >= ZOOM.max;
+  }
+
+  function setZoom(nextZoom) {
+    const normalized = clamp(Number(nextZoom.toFixed(2)), ZOOM.min, ZOOM.max);
+    if (normalized === state.zoom) return;
+    state.zoom = normalized;
+    updateZoomLayout();
+  }
+
+  function bumpZoom(delta) {
+    setZoom(state.zoom + delta);
+  }
+
   function buildPageNode(url, index) {
     const article = document.createElement("article");
     article.className = "page loading";
@@ -243,9 +278,28 @@
       if (idx >= 0) openChapter(idx);
     });
 
+    els.zoomOutBtn.addEventListener("click", () => bumpZoom(-ZOOM.step));
+    els.zoomInBtn.addEventListener("click", () => bumpZoom(ZOOM.step));
+    els.zoomIndicator.addEventListener("dblclick", () => setZoom(1));
+
+    window.addEventListener("resize", updateZoomLayout);
+    window.addEventListener(
+      "wheel",
+      (event) => {
+        if (!event.ctrlKey) return;
+        event.preventDefault();
+        const direction = event.deltaY > 0 ? -1 : 1;
+        bumpZoom(direction * ZOOM.step);
+      },
+      { passive: false }
+    );
+
     window.addEventListener("keydown", (event) => {
       if (event.key === "ArrowLeft") openChapter(state.currentIndex - 1);
       if (event.key === "ArrowRight") openChapter(state.currentIndex + 1);
+      if (event.key === "+" || event.key === "=") bumpZoom(ZOOM.step);
+      if (event.key === "-") bumpZoom(-ZOOM.step);
+      if (event.key === "0") setZoom(1);
     });
   }
 
@@ -258,6 +312,7 @@
       const initialIndex = state.chapters.findIndex((c) => c.id === requested);
 
       bindEvents();
+      updateZoomLayout();
       await openChapter(initialIndex >= 0 ? initialIndex : 0);
     } catch (error) {
       console.error(error);
