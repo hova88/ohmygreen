@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>All posts</h1>
-<ul>
-  {% for post in posts %}
-  <li><a href="/blog/{{ post.slug }}/">{{ post.title }}</a> <small>{{ post.date.strftime('%Y-%m-%d') }}</small></li>
-  {% endfor %}
-</ul>
-{% endblock %}

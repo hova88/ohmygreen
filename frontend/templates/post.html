@@ -1,8 +1,0 @@
-{% extends "base.html" %}
-{% block content %}
-<article>
-  <h1>{{ post.title }}</h1>
-  <p><small>{{ post.date.strftime('%Y-%m-%d') }} · {{ post.tags | join(', ') }}</small></p>
-  <div class="content">{{ post.body_html | safe }}</div>
-</article>
-{% endblock %}
