@@ -3,7 +3,8 @@
     seriesName: "Berserk",
     dataRoot: "data/berserk",
     manifestFile: "chapters.json",
-    imageExtensions: [".jpg", ".jpeg", ".png", ".webp", ".avif"]
+    imageExtensions: [".jpg", ".jpeg", ".png", ".webp", ".avif"],
+    preloadAhead: 8
   };
 
   const els = {
@@ -12,17 +13,28 @@
     chapterMeta: document.getElementById("chapter-meta"),
     chapterSelect: document.getElementById("chapter-select"),
     prevBtn: document.getElementById("prev-btn"),
-    nextBtn: document.getElementById("next-btn")
+    nextBtn: document.getElementById("next-btn"),
+    zoomInBtn: document.getElementById("zoom-in-btn"),
+    zoomOutBtn: document.getElementById("zoom-out-btn"),
+    fitBtn: document.getElementById("fit-btn"),
+    layoutBtn: document.getElementById("layout-btn"),
+    zoomLabel: document.getElementById("zoom-label")
   };
 
   const state = {
     chapters: [],
     currentIndex: 0,
     imageCache: new Map(),
-    io: null
+    io: null,
+    preloadCache: new Map(),
+    currentPageUrls: [],
+    zoom: 1,
+    manualLayout: null
   };
 
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
   function byName(a, b) {
     return collator.compare(a, b);
@@ -125,48 +137,99 @@
     });
   }
 
+  function preloadImage(url) {
+    if (state.preloadCache.has(url)) return state.preloadCache.get(url);
+
+    const task = new Promise((resolve) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.loading = "eager";
+      img.src = url;
+
+      const done = () => resolve(url);
+      img.addEventListener("load", done, { once: true });
+      img.addEventListener("error", done, { once: true });
+    });
+
+    state.preloadCache.set(url, task);
+    return task;
+  }
+
+  function queueAhead(startIndex) {
+    const begin = clamp(startIndex, 0, state.currentPageUrls.length);
+    const end = Math.min(begin + CONFIG.preloadAhead, state.currentPageUrls.length);
+
+    for (let idx = begin; idx < end; idx += 1) {
+      preloadImage(state.currentPageUrls[idx]);
+    }
+  }
+
   function ensureIO() {
-    if (state.io) return;
+    if (state.io) state.io.disconnect();
+
     state.io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
-          const img = entry.target.querySelector("img[data-src]");
+          const article = entry.target;
+          const img = article.querySelector("img[data-src]");
           if (!img) return;
+
+          const currentIndex = Number(article.dataset.index || 0);
+          queueAhead(currentIndex);
+
           img.src = img.dataset.src;
           img.removeAttribute("data-src");
-          state.io.unobserve(entry.target);
+          state.io.unobserve(article);
         });
       },
-      { rootMargin: "1000px 0px" }
+      { rootMargin: "1800px 0px" }
     );
   }
 
   function buildPageNode(url, index) {
     const article = document.createElement("article");
-    article.className = "page";
-
-    const placeholder = document.createElement("div");
-    placeholder.className = "placeholder";
+    article.className = "page loading";
+    article.dataset.index = index;
 
     const img = document.createElement("img");
     img.alt = `Page ${index + 1}`;
     img.decoding = "async";
-    img.loading = "lazy";
-    if (index < 3) {
+
+    if (index < 2) {
       img.fetchPriority = "high";
       img.src = url;
     } else {
       img.dataset.src = url;
     }
 
-    img.addEventListener("load", () => {
-      placeholder.remove();
-    });
+    img.addEventListener(
+      "load",
+      () => {
+        article.classList.remove("loading");
+      },
+      { once: true }
+    );
 
-    article.appendChild(placeholder);
     article.appendChild(img);
     return article;
+  }
+
+  function applyViewMode() {
+    const autoDouble = state.zoom <= 0.85;
+    const useDouble = state.manualLayout === null ? autoDouble : state.manualLayout === "double";
+
+    els.pages.classList.toggle("layout-double", useDouble);
+    els.layoutBtn.textContent = useDouble ? "双页" : "单页";
+
+    const width = useDouble ? clamp(state.zoom * 1.5, 0.8, 1.8) : state.zoom;
+    document.documentElement.style.setProperty("--page-width", `min(100%, ${Math.round(1100 * width)}px)`);
+    els.zoomLabel.textContent = `${Math.round(state.zoom * 100)}%`;
+  }
+
+  function setZoom(nextZoom) {
+    state.zoom = clamp(nextZoom, 0.5, 2.3);
+    applyViewMode();
   }
 
   async function openChapter(index) {
@@ -176,33 +239,41 @@
     const chapter = state.chapters[state.currentIndex];
     const files = await listImagesForChapter(chapter.id);
 
+    state.currentPageUrls = files.map(
+      (file) => `${CONFIG.dataRoot}/${chapter.id}/${encodeURIComponent(file)}`
+    );
+
     els.pages.innerHTML = "";
     ensureIO();
 
-    files.forEach((file, pageIndex) => {
-      const imageUrl = `${CONFIG.dataRoot}/${chapter.id}/${encodeURIComponent(file)}`;
+    state.currentPageUrls.forEach((imageUrl, pageIndex) => {
       const node = buildPageNode(imageUrl, pageIndex);
       els.pages.appendChild(node);
-      if (pageIndex >= 3) state.io.observe(node);
+      if (pageIndex >= 2) state.io.observe(node);
     });
 
+    queueAhead(0);
     updateQuery(chapter.id);
     updateHeader(files.length);
     window.scrollTo({ top: 0, behavior: "instant" });
-
-    // Small warm-up for faster first scroll.
-    files.slice(3, 7).forEach((file) => {
-      const link = document.createElement("link");
-      link.rel = "prefetch";
-      link.as = "image";
-      link.href = `${CONFIG.dataRoot}/${chapter.id}/${encodeURIComponent(file)}`;
-      document.head.appendChild(link);
-    });
   }
 
   function bindEvents() {
     els.prevBtn.addEventListener("click", () => openChapter(state.currentIndex - 1));
     els.nextBtn.addEventListener("click", () => openChapter(state.currentIndex + 1));
+
+    els.zoomInBtn.addEventListener("click", () => setZoom(state.zoom + 0.1));
+    els.zoomOutBtn.addEventListener("click", () => setZoom(state.zoom - 0.1));
+    els.fitBtn.addEventListener("click", () => {
+      state.manualLayout = null;
+      setZoom(1);
+    });
+
+    els.layoutBtn.addEventListener("click", () => {
+      const isNowDouble = els.pages.classList.contains("layout-double");
+      state.manualLayout = isNowDouble ? "single" : "double";
+      applyViewMode();
+    });
 
     els.chapterSelect.addEventListener("change", (event) => {
       const idx = state.chapters.findIndex((c) => c.id === event.target.value);
@@ -212,13 +283,31 @@
     window.addEventListener("keydown", (event) => {
       if (event.key === "ArrowLeft") openChapter(state.currentIndex - 1);
       if (event.key === "ArrowRight") openChapter(state.currentIndex + 1);
+      if (event.key === "+" || event.key === "=") setZoom(state.zoom + 0.1);
+      if (event.key === "-") setZoom(state.zoom - 0.1);
+      if (event.key.toLowerCase() === "d") {
+        state.manualLayout = els.pages.classList.contains("layout-double") ? "single" : "double";
+        applyViewMode();
+      }
     });
+
+    window.addEventListener(
+      "wheel",
+      (event) => {
+        if (!event.ctrlKey && !event.metaKey) return;
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? -0.06 : 0.06;
+        setZoom(state.zoom + delta);
+      },
+      { passive: false }
+    );
   }
 
   async function init() {
     try {
       state.chapters = await loadManifest();
       renderChapterOptions();
+      applyViewMode();
 
       const requested = new URLSearchParams(window.location.search).get("chapter");
       const initialIndex = state.chapters.findIndex((c) => c.id === requested);
