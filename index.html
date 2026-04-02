@@ -1,28 +1,70 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Berserk Image Reader</title>
+    <title>OhMyGreen Anime Browser</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="hud glass">
-      <div class="left">
-        <strong id="series-name">Berserk</strong>
-        <span id="chapter-meta">Loading chapters…</span>
-      </div>
-      <div class="controls">
-        <button id="prev-btn" type="button" aria-label="Previous chapter">←</button>
-        <select id="chapter-select" aria-label="Select chapter"></select>
-        <button id="next-btn" type="button" aria-label="Next chapter">→</button>
-        <button id="zoom-out-btn" type="button" aria-label="Zoom out">－</button>
-        <span id="zoom-indicator" class="chip" aria-live="polite">100%</span>
-        <button id="zoom-in-btn" type="button" aria-label="Zoom in">＋</button>
+    <div class="bg-layer"></div>
+
+    <header class="site-header">
+      <p class="eyebrow">Static Anime Archive</p>
+      <div class="hero-row">
+        <div>
+          <h1 id="series-name">Berserk</h1>
+          <p id="reader-status">正在加载章节数据...</p>
+        </div>
+        <div class="metrics" aria-label="站点统计">
+          <article>
+            <span>Total Chapters</span>
+            <strong id="total-chapters">--</strong>
+          </article>
+          <article>
+            <span>Total Pages</span>
+            <strong id="total-pages">--</strong>
+          </article>
+          <article>
+            <span>Current</span>
+            <strong id="chapter-meta">--</strong>
+          </article>
+        </div>
       </div>
     </header>
 
-    <main id="pages" aria-live="polite"></main>
+    <main class="layout">
+      <aside class="chapter-panel">
+        <div class="panel-head">
+          <h2>Chapter Navigator</h2>
+          <p id="current-chapter-label">--</p>
+        </div>
+
+        <div class="control-row">
+          <button id="prev-btn" type="button" aria-label="上一章">Prev</button>
+          <button id="next-btn" type="button" aria-label="下一章">Next</button>
+        </div>
+
+        <label class="field" for="chapter-select">Quick Jump</label>
+        <select id="chapter-select" aria-label="选择章节"></select>
+
+        <div class="zoom-row" aria-label="缩放控制">
+          <button id="zoom-out-btn" type="button" aria-label="缩小">-</button>
+          <span id="zoom-indicator" class="chip" aria-live="polite">100%</span>
+          <button id="zoom-in-btn" type="button" aria-label="放大">+</button>
+        </div>
+
+        <ul id="chapter-list" class="chapter-list" aria-label="章节列表"></ul>
+      </aside>
+
+      <section class="viewer" aria-live="polite">
+        <div class="viewer-head">
+          <h2 id="current-chapter-title">Chapter</h2>
+          <p><span id="current-page-count">0</span> pages</p>
+        </div>
+        <div id="pages" class="pages"></div>
+      </section>
+    </main>
 
     <script src="app.js"></script>
   </body>

@@ -10,7 +10,14 @@
   const els = {
     pages: document.getElementById("pages"),
     seriesName: document.getElementById("series-name"),
+    readerStatus: document.getElementById("reader-status"),
     chapterMeta: document.getElementById("chapter-meta"),
+    currentChapterLabel: document.getElementById("current-chapter-label"),
+    currentChapterTitle: document.getElementById("current-chapter-title"),
+    currentPageCount: document.getElementById("current-page-count"),
+    totalChapters: document.getElementById("total-chapters"),
+    totalPages: document.getElementById("total-pages"),
+    chapterList: document.getElementById("chapter-list"),
     chapterSelect: document.getElementById("chapter-select"),
     prevBtn: document.getElementById("prev-btn"),
     nextBtn: document.getElementById("next-btn"),
@@ -26,15 +33,16 @@
     io: null,
     preloadCache: new Map(),
     currentPageUrls: [],
-    zoom: 1
+    zoom: 1,
+    totalPages: null
   };
 
   const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const ZOOM = {
-    min: 0.45,
-    max: 2.4,
+    min: 0.5,
+    max: 1.8,
     step: 0.1
   };
 
@@ -113,6 +121,14 @@
     return files;
   }
 
+  async function warmTotalPages() {
+    if (typeof state.totalPages === "number") return state.totalPages;
+
+    const lists = await Promise.all(state.chapters.map((chapter) => listImagesForChapter(chapter.id)));
+    state.totalPages = lists.reduce((total, files) => total + files.length, 0);
+    return state.totalPages;
+  }
+
   function updateQuery(chapterId) {
     const url = new URL(window.location.href);
     url.searchParams.set("chapter", chapterId);
@@ -121,8 +137,16 @@
 
   function updateHeader(imageCount) {
     const chapter = state.chapters[state.currentIndex];
+    const currentNo = `${String(state.currentIndex + 1).padStart(2, "0")}/${String(
+      state.chapters.length
+    ).padStart(2, "0")}`;
+
     els.seriesName.textContent = CONFIG.seriesName;
-    els.chapterMeta.textContent = `${state.currentIndex + 1}/${state.chapters.length} · ${chapter.id} · ${imageCount} pages`;
+    els.chapterMeta.textContent = currentNo;
+    els.currentChapterLabel.textContent = `${chapter.id}`;
+    els.currentChapterTitle.textContent = `${chapter.title}`;
+    els.currentPageCount.textContent = String(imageCount);
+    els.readerStatus.textContent = `${chapter.id} · ${imageCount} pages`;
     els.chapterSelect.value = chapter.id;
     els.prevBtn.disabled = state.currentIndex === 0;
     els.nextBtn.disabled = state.currentIndex === state.chapters.length - 1;
@@ -136,6 +160,33 @@
       option.value = chapter.id;
       option.textContent = `${String(index + 1).padStart(2, "0")} · ${chapter.title}`;
       els.chapterSelect.appendChild(option);
+    });
+  }
+
+  function renderChapterList() {
+    els.chapterList.innerHTML = "";
+
+    state.chapters.forEach((chapter, index) => {
+      const li = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "chapter-item";
+      button.dataset.index = String(index);
+      button.innerHTML = `${String(index + 1).padStart(2, "0")} · ${chapter.title}<small>${chapter.id}</small>`;
+
+      button.addEventListener("click", () => {
+        openChapter(index);
+      });
+
+      li.appendChild(button);
+      els.chapterList.appendChild(li);
+    });
+  }
+
+  function highlightCurrentChapter() {
+    [...els.chapterList.querySelectorAll(".chapter-item")].forEach((node) => {
+      const active = Number(node.dataset.index) === state.currentIndex;
+      node.classList.toggle("active", active);
     });
   }
 
@@ -185,19 +236,18 @@
           state.io.unobserve(article);
         });
       },
-      { rootMargin: "1800px 0px" }
+      { rootMargin: "1300px 0px" }
     );
   }
 
   function updateZoomLayout() {
     const viewportWidth = window.innerWidth;
-    const basePageWidth = Math.min(1100, viewportWidth);
-    const zoomedPageWidth = basePageWidth * state.zoom;
-    const columns = Math.max(1, Math.floor(viewportWidth / zoomedPageWidth));
-    const canvasWidth = Math.round(zoomedPageWidth * columns);
+    const usableWidth = viewportWidth >= 1040 ? viewportWidth - 360 : viewportWidth - 40;
+    const baseTileWidth = 520;
+    const targetTileWidth = baseTileWidth * state.zoom;
+    const columns = Math.max(1, Math.floor(usableWidth / targetTileWidth));
     const zoomPercent = Math.round(state.zoom * 100);
 
-    document.documentElement.style.setProperty("--canvas-width", `${canvasWidth}px`);
     document.documentElement.style.setProperty("--columns", String(columns));
     els.zoomIndicator.textContent = `${zoomPercent}%`;
     els.zoomOutBtn.disabled = state.zoom <= ZOOM.min;
@@ -219,6 +269,7 @@
     const article = document.createElement("article");
     article.className = "page loading";
     article.dataset.index = index;
+    article.dataset.page = `P${String(index + 1).padStart(3, "0")}`;
 
     const img = document.createElement("img");
     img.alt = `Page ${index + 1}`;
@@ -266,7 +317,8 @@
     queueAhead(0);
     updateQuery(chapter.id);
     updateHeader(files.length);
-    window.scrollTo({ top: 0, behavior: "instant" });
+    highlightCurrentChapter();
+    window.scrollTo({ top: 0, behavior: "auto" });
   }
 
   function bindEvents() {
@@ -307,6 +359,10 @@
     try {
       state.chapters = await loadManifest();
       renderChapterOptions();
+      renderChapterList();
+
+      els.totalChapters.textContent = String(state.chapters.length);
+      els.totalPages.textContent = "...";
 
       const requested = new URLSearchParams(window.location.search).get("chapter");
       const initialIndex = state.chapters.findIndex((c) => c.id === requested);
@@ -314,9 +370,17 @@
       bindEvents();
       updateZoomLayout();
       await openChapter(initialIndex >= 0 ? initialIndex : 0);
+
+      warmTotalPages()
+        .then((total) => {
+          els.totalPages.textContent = String(total);
+        })
+        .catch(() => {
+          els.totalPages.textContent = "--";
+        });
     } catch (error) {
       console.error(error);
-      els.chapterMeta.textContent = "Failed to load chapter list";
+      els.readerStatus.textContent = "加载失败";
       els.pages.innerHTML = `<p style='padding:20px'>${error.message}</p>`;
     }
   }
