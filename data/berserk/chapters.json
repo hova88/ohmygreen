@@ -1,6 +1,12 @@
 {
   "series": "Berserk",
   "chapters": [
-    { "folder": "chapter_01", "title": "Chapter 01" }
+    { "folder": "chapter_01", "title": "Chapter 01" },
+    { "folder": "chapter_02", "title": "Chapter 02" },
+    { "folder": "chapter_03", "title": "Chapter 03" },
+    { "folder": "chapter_04", "title": "Chapter 04" },
+    { "folder": "chapter_05", "title": "Chapter 05" },
+    { "folder": "chapter_06", "title": "Chapter 06" },
+    { "folder": "chapter_07", "title": "Chapter 07" }
   ]
 }
